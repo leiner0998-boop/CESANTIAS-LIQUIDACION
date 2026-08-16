@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Liquidación de Cesantías</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-calc {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-calc:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-print {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background-color: #059669;
+        }
+
+        /* Formato Factura / Comprobante */
+        .invoice {
+            border: 2px solid var(--border-color);
+            padding: 25px;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .invoice-header div h3 {
+            color: var(--primary);
+        }
+
+        .invoice-details {
+            margin-bottom: 20px;
+        }
+
+        .invoice-details p {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f3f4f6;
+            color: var(--primary);
+        }
+
+        .total-row {
+            font-weight: bold;
+            font-size: 1.1rem;
+            background-color: #e0e7ff;
+        }
+
+        .footer-note {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        /* Estilos de Impresión */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                width: 100%;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .invoice {
+                border: 1px solid #000;
+                background-color: white;
+            }
+
+            th {
+                background-color: #eee !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="no-print">Liquidación de Cesantías</h1>
+
+    <div class="form-grid no-print">
+        <div class="form-group">
+            <label for="employeeName">Nombre del Empleado</label>
+            <input type="text" id="employeeName" placeholder="Ej. Juan Pérez">
+        </div>
+        <div class="form-group">
+            <label for="employeeId">Identificación (C.C.)</label>
+            <input type="text" id="employeeId" placeholder="Ej. 123456789">
+        </div>
+        <div class="form-group">
+            <label for="salary">Salario Mensual ($)</label>
+            <input type="number" id="salary" placeholder="Ej. 2000000">
+        </div>
+        <div class="form-group">
+            <label for="transport">Auxilio de Transporte ($)</label>
+            <input type="number" id="transport" placeholder="Ej. 162000" value="0">
+        </div>
+        <div class="form-group">
+            <label for="daysWorked">Días Trabajos (Año o Periodo)</label>
+            <input type="number" id="daysWorked" placeholder="Ej. 360" max="360">
+        </div>
+    </div>
+
+    <div class="btn-container no-print">
+        <button class="btn-calc" onclick="calculate()">Calcular Liquidación</button>
+        <button class="btn-print" onclick="window.print()">Imprimir Factura / Recibo</button>
+    </div>
+
+    <div class="invoice" id="invoice">
+        <div class="invoice-header">
+            <div>
+                <h3>COMPROBANTE DE LIQUIDACIÓN</h3>
+                <p><strong>Educación Financiera S.A.S.</strong></p>
+                <p>NIT: 900.000.000-1</p>
+            </div>
+            <div style="text-align: right;">
+                <p><strong>Fecha de Emisión:</strong> <span id="currentDate">-</span></p>
+                <p><strong>Estado:</strong> Liquidación Parcial/Final</p>
+            </div>
+        </div>
+
+        <div class="invoice-details">
+            <p><strong>Empleado:</strong> <span id="outName">---</span></p>
+            <p><strong>Documento:</strong> <span id="outId">---</span></p>
+            <p><strong>Días Liquidados:</strong> <span id="outDays">0</span> días</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Base de Cálculo</th>
+                    <th>Fórmula Aplicada</th>
+                    <th style="text-align: right;">Total Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Cesantías</td>
+                    <td id="outBaseSalary">$0</td>
+                    <td>(Base * Días) / 360</td>
+                    <td style="text-align: right;" id="outCesantias">$0</td>
+                </tr>
+                <tr>
+                    <td>Intereses sobre Cesantías</td>
+                    <td id="outBaseIntereses">$0</td>
+                    <td>(Cesantías * Días * 12%) / 360</td>
+                    <td style="text-align: right;" id="outIntereses">$0</td>
+                </tr>
+                <tr>
+                    <td>Prima de Servicios</td>
+                    <td id="outBasePrima">$0</td>
+                    <td>(Base * Días) / 360</td>
+                    <td style="text-align: right;" id="outPrima">$0</td>
+                </tr>
+                <tr>
+                    <td>Vacaciones Causadas</td>
+                    <td id="outBaseVacaciones">$0</td>
+                    <td>(Salario Básico * Días) / 720</td>
+                    <td style="text-align: right;" id="outVacaciones">$0</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3">TOTAL A PAGAR / CONSIGNAR</td>
+                    <td style="text-align: right;" id="outTotal">$0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer-note">
+            <p>Este documento es una representación impresa de la liquidación de prestaciones sociales conforme a la normativa legal colombiana vigente (Art. 249 del Código Sustantivo del Trabajo).</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Asignar fecha actual
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('es-CO');
+
+    function calculate() {
+        // Obtener valores
+        const name = document.getElementById('employeeName').value || 'Sin Nombre';
+        const id = document.getElementById('employeeId').value || 'N/A';
+        const salary = parseFloat(document.getElementById('salary').value) || 0;
+        const transport = parseFloat(document.getElementById('transport').value) || 0;
+        const days = parseFloat(document.getElementById('daysWorked').value) || 0;
+
+        // Base de cálculo = Salario + Auxilio de Transporte
+        const baseSalary = salary + transport;
+
+        // Fórmulas financieras (Ley Colombiana)
+        // 1. Cesantías = (Base * Días) / 360
+        const cesantias = (baseSalary * days) / 360;
+
+        // 2. Intereses sobre cesantías = (Cesantías * Días * 0.12) / 360
+        const intereses = (cesantias * days * 0.12) / 360;
+
+        // 3. Prima de Servicios = (Base * Días) / 360
+        const prima = (baseSalary * days) / 360;
+
+        // 4. Vacaciones Causadas = (Salario Básico * Días) / 720
+        // Nota: Se usa solo el salario básico SIN auxilio de transporte
+        const vacaciones = (salary * days) / 720;
+
+        const total = cesantias + intereses + prima + vacaciones;
+
+        // Formateador de moneda
+        const formatter = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0
+        });
+
+        // Actualizar datos en la vista/factura
+        document.getElementById('outName').innerText = name;
+        document.getElementById('outId').innerText = id;
+        document.getElementById('outDays').innerText = days;
+
+        document.getElementById('outBaseSalary').innerText = formatter.format(baseSalary);
+        document.getElementById('outBaseIntereses').innerText = formatter.format(cesantias);
+        document.getElementById('outBasePrima').innerText = formatter.format(baseSalary);
+        document.getElementById('outBaseVacaciones').innerText = formatter.format(salary);
+
+        document.getElementById('outCesantias').innerText = formatter.format(cesantias);
+        document.getElementById('outIntereses').innerText = formatter.format(intereses);
+        document.getElementById('outPrima').innerText = formatter.format(prima);
+        document.getElementById('outVacaciones').innerText = formatter.format(vacaciones);
+        document.getElementById('outTotal').innerText = formatter.format(total);
+    }
+</script>
+
+</body>
+</html>
